@@ -8,4 +8,5 @@ mongoclientObj = MongoClient(add,port)[db][collection]
 
 base_url = "http://www.allthelyrics.com"
 index_url = "http://www.allthelyrics.com/index"
-alphabets = list("abcdefghiklmnopqrstuvwxyz0123456789")
+alphabets = list("abcdefghiklmnopqrstuvwxyz")
+alphabets.append("numbers")

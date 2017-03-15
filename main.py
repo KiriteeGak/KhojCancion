@@ -9,6 +9,7 @@ from config import *
 
 def main(base_url, index_url, alphabets):
 	for letter in alphabets:
+		print letter
 		leaf1_url = index_url+"/"+letter
 		element_tag_links = getLinks(leaf1_url)
 		max_number_of_pages = getPages(element_tag_links)
@@ -63,12 +64,12 @@ def getNoOfPages(element_tag_links, baseword_title):
 	return out_links
 
 def maxPageForaAlphabet(list_of_links):
-	return max(list([int(re.findall(r'/index/a/a(.*?).htm',link,re.IGNORECASE)[0]) for link in list_of_links]))
+	return max(list([int(re.findall(r'\d+.htm',link,re.IGNORECASE)[0].replace('.htm','')) for link in list_of_links]))
 
 def getPages(element_tag_links):
 	pages = getNoOfPages(element_tag_links,"Go to page")
 	return maxPageForaAlphabet(pages)
-
+	
 def getAllSongs(page_url, baseword_href, baseword_title):
 	return refineLinks(getLinks(page_url), baseword_href, baseword_title, node_branch = True)
 
