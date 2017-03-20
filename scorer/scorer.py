@@ -25,7 +25,7 @@ class matchScorer(object):
 		return [x.strip() for x in text.strip().lower().split(" ")]
 
 	def getShortestDistances(self, sample, lyric, ret, score = 0):
-		points_list = self.getIndices(sample, lyric, [])
+		points_list = self.getIndices(sample, lyric, ret)
 		for i in range(0,len(points_list)-1):
 			globalMin = float("Inf")
 			for pt1 in points_list[i]:
@@ -39,6 +39,9 @@ class matchScorer(object):
 	def getMatchScores(self, sample):
 		return {each['_id']: "%.3f" %self.getScore(sample,each['lyrics']) for each in mongoclientObj.find()}
 
+	def getTopnMatches(self, n_top_matches, sample):
+		return sorted(self.getMatchScores(sample).items(), key=lambda (k, v): v, reverse=True)[:n_top_matches]
+
 if __name__ == '__main__':
 	sample = "at you gettin by aint the same without you"
-	print matchScorer().getMatchScores(sample) # Test
+	print matchScorer().getTopnMatches(10,sample)
