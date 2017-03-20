@@ -4,9 +4,9 @@
 
 ### Done
 1.	Finding the tags of artists and lyrics to scrap from web for testing
-2.	Some skeleton scheme
+2.	Some skeleton schema
+3.	Pull some lyrics and save them to mongo
+4.	Scoring based on most probable match
 
 ### Need to do
-1.	Pull some lyrics and save them to mongo
-2.	Add key filter to reduce search space
-3.	Scoring based on most probable match
+1.	Add key filter to reduce search space (artist, genre etc.)
