@@ -5,15 +5,15 @@ db = "khojcancion"
 collection = "lyrics"
 mongoclientObj = MongoClient(add,port)[db][collection]
 
-sample = "We like Van Halen And Iron Maiden"
-
 class matchScorer(object):
 	def getScore(self, sample, lyric):
 		points_list, score = self.getShortestDistances(sample, lyric, [])
-		print points_list, score
 		match_score = (len(points_list) - points_list.count([]))/float(len(points_list))
-		distance_score = float(len(points_list))/score
-		print match_score, distance_score
+		if score != 0:
+			distance_score = len(points_list)/(float(score)+(points_list.count([])+1))
+		else:
+			distance_score = 0
+		return match_score+distance_score
 
 	def getIndices(self, sample, lyric, ret):
 		if len(sample.split(" ")) == 1:
@@ -35,3 +35,10 @@ class matchScorer(object):
 			if globalMin != float("Inf"):
 				score += globalMin
 		return points_list, score
+
+	def getMatchScores(self, sample):
+		return {each['_id']: "%.3f" %self.getScore(sample,each['lyrics']) for each in mongoclientObj.find()}
+
+if __name__ == '__main__':
+	sample = "at you gettin by aint the same without you"
+	print matchScorer().getMatchScores(sample) # Test
