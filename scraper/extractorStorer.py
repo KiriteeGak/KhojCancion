@@ -4,7 +4,8 @@ import requests, urllib2, re
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 from utilities import *
-from config import *
+from extractorStorerConfig import *
+from timeit import time
 
 class lyricExtractor(object):
 	def main(self, base_url, index_url, alphabets):

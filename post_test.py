@@ -18,8 +18,6 @@ class Index(object):
 		matches = matchScorer().getTopnMatches(lyric_text, no_of_res)
 		with open("templates/out.html",'wb') as fid:
 			fid.write(htmlTableGenerator().generateTable(matches))
-		# print htmlTableGenerator().generateTable(matches)
-		# return render.index(greeting = lyric_text)
 		return render.out("makerender")
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@ from pymongo import MongoClient
 
 add = "localhost"
 port = 27017
-db = "khojcancion"
+db = "get_cancion_primary_db"
 collection = "lyrics"
 mongoclientObj = MongoClient(add,port)[db][collection]
 
