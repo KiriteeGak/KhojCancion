@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+from wordRecommender import *
 import re
 
 add = "localhost"
@@ -41,6 +42,7 @@ class matchScorer(object):
 		return {each['song']: "%.3f" %self.getScore(sample,each['lyrics']) for each in mongoclientObj.find()}
 
 	def getTopnMatches(self, sample, n_top_matches):
+		sample = checkAndCorrect(sample)
 		return sorted(self.getMatchScores(sample).items(), key=lambda (k, v): v, reverse=True)[:int(n_top_matches)]
 
 	def punctuationRemover(self, text):
