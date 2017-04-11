@@ -2,11 +2,17 @@ from pymongo import MongoClient
 from wordRecommender import *
 import re
 
+# mongo config
 add = "localhost"
 port = 27017
 db = "khojcancion"
 collection = "lyrics"
 mongoclientObj = MongoClient(add,port)[db][collection]
+
+# cassandra config
+from cassandra.cluster import Cluster
+cluster = Cluster()
+session = cluster.connect("get_cancion")
 
 class matchScorer(object):
 	def getScore(self, sample, lyric):
@@ -38,12 +44,19 @@ class matchScorer(object):
 				score += globalMin
 		return points_list, score
 
-	def getMatchScores(self, sample):
-		return {each['song']: "%.3f" %self.getScore(sample,each['lyrics']) for each in mongoclientObj.find()}
+	def scoreFromSetupDb(self,sample, db='Mongo'):
+		if db.lower() == 'mongo':
+			return {each['song']: "%.3f" %self.getScore(sample,each['lyrics']) for each in mongoclientObj.find()}
+		elif db.lower() == 'cassandra':
+			cassandraObj = session.execute('select * from primary_db')
+			return {each.song_name: "%.3f" %self.getScore(sample,each.lyrics) for each in cassandraObj}
+		else:
+			raise ValueError('Valid db names are cassandra and mongo, default is mongo')
+			return {}
 
 	def getTopnMatches(self, sample, n_top_matches):
 		sample = checkAndCorrect(sample)
-		return sorted(self.getMatchScores(sample).items(), key=lambda (k, v): v, reverse=True)[:int(n_top_matches)]
+		return sorted(self.scoreFromSetupDb(sample,"cassandra").items(), key=lambda (k, v): v, reverse=True)[:int(n_top_matches)]
 
 	def punctuationRemover(self, text):
 		return re.sub(r'(\.|,|"|\'|\?|\!)',"",text)
