@@ -3,7 +3,9 @@ from bs4 import BeautifulSoup
 import requests, urllib2, re
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
-from utilities import *
+from cassandra import ConsistencyLevel
+from cassandra.query import SimpleStatement
+from utilities import utilities
 from extractorStorerConfig import *
 from timeit import time
 
@@ -11,18 +13,20 @@ class lyricExtractor(object):
 	def main(self, base_url, index_url, alphabets):
 		for letter in alphabets:
 			leaf1_url = index_url+"/"+letter
-			element_tag_links = getLinks(leaf1_url)
+			element_tag_links = utilities.getLinks(leaf1_url)
 			max_number_of_pages = self.getPages(element_tag_links)
 			for pageNumber in range(1,max_number_of_pages+1):
 				page_url_modified = leaf1_url+"/"+letter+str(pageNumber)+".htm"
-				refined_links = self.refineLinks(getLinks(page_url_modified), "/lyrics", "title", False)
+				refined_links = self.refineLinks(utilities.getLinks(page_url_modified), "/lyrics", "title", False)
 				for each_link in refined_links:
 					song_links = list(set(self.getAllSongs(base_url+"/"+each_link, each_link, "title")))
 					for each_song in song_links:
 						song_url = base_url+"/"+each_song
 						(lyrics, song_name) = self.getSongLyrics(song_url)
 						try:
-							self.makeDocumentAndPush(each_link.split('/')[-1], song_name, song_url, lyrics)
+							# Cassandra for learning purpose and ofcourse for faster read writes
+							self.pushToCassandraMain(each_link.split('/')[-1], song_name, song_url, lyrics,"primary_db")
+							# self.makeDocumentAndPush(each_link.split('/')[-1], song_name, song_url, lyrics)
 						except DuplicateKeyError as e:
 							pass
 
@@ -34,10 +38,18 @@ class lyricExtractor(object):
 				'lyrics' : lyrics,
 				'lyric link' :lyric_url
 			}
-		mongoclientObj.insert(doc)
+		pushToMongo("localhost",27017,"get_cancion_primary_db","lyrics").insert(doc)
+
+	def pushToCassandraMain(self, artist, song_name, lyric_url, lyrics, table_name):
+		query = SimpleStatement("INSERT INTO "+table_name+" (id, artist_name, lyrics, lyrics_link, song_name) values (%s, %s, %s, %s, %s)")
+		try:
+			pushToCassandra('get_cancion').execute(query,(artist+"_"+song_name.replace(' ','_'), artist, lyrics, lyric_url, song_name))
+		except Exception as e:
+			print e
+			pass
 
 	def getSongLyrics(self, song_url):
-		soup = BeautifulSoup(getHtmlResponse(song_url),'html.parser')
+		soup = BeautifulSoup(utilities.getHtmlResponse(song_url),'html.parser')
 		return soup.find_all('div',{"class":"content-text-inner"})[0].text.replace("\n"," "), soup.find_all('h1',{"class":"page-title"})[0].text.lower().replace(" lyrics","")
 
 	def refineLinks(self, list_of_links, baseword_href, baseword_title, node_branch):
@@ -70,4 +82,4 @@ class lyricExtractor(object):
 		return self.maxPageForaAlphabet(pages)
 		
 	def getAllSongs(self, page_url, baseword_href, baseword_title):
-		return self.refineLinks(getLinks(page_url), baseword_href, baseword_title, node_branch = True)
+		return self.refineLinks(utilities.getLinks(page_url), baseword_href, baseword_title, node_branch = True)
