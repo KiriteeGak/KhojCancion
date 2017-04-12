@@ -44,7 +44,7 @@ class matchScorer(object):
 				score += globalMin
 		return points_list, score
 
-	def scoreFromSetupDb(self,sample, db='Mongo'):
+	def scoreFromSetupDb(self,sample, db='cassandra'):
 		if db.lower() == 'mongo':
 			return {each['song']: "%.3f" %self.getScore(sample,each['lyrics']) for each in mongoclientObj.find()}
 		elif db.lower() == 'cassandra':
@@ -52,10 +52,10 @@ class matchScorer(object):
 			return {each.song_name: "%.3f" %self.getScore(sample,each.lyrics) for each in cassandraObj}
 		else:
 			raise ValueError('Valid db names are cassandra and mongo, default is mongo')
-			return {}
+			return []
 
-	def getTopnMatches(self, sample, n_top_matches):
-		sample = checkAndCorrect(sample)
+	def getTopnMatches(self, sample, n_top_matches, english_check):
+		sample = checkAndCorrect(sample) if english_check == "Yes" else sample
 		return sorted(self.scoreFromSetupDb(sample,"cassandra").items(), key=lambda (k, v): v, reverse=True)[:int(n_top_matches)]
 
 	def punctuationRemover(self, text):

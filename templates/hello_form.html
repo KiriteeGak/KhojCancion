@@ -1,8 +1,12 @@
-<h1>Sample page format</h1>
-
+<h1 align="center">Lyric search engine</h1>
+<br><br/>
 <form action="/hello" method="POST">
 	Post some lyrics here: <input type="text" name="lyric_text">
-	Maximum number of matches: <input type="number" name="no_of_matches">
-	<br/>
+	Maximum number of matches: <input type="number" name="no_of_matches" value=10>
+	<br><br/>
+	Language for word recommendations/corrections:
+	<input type="radio" id="radio_yes" name="radio_btn" value="Yes"  checked="checked" /> English (Default Option)
+	<input type="radio" id="radio_no" name="radio_btn" value="No"/> Other languages
+	<br><br/>
 	<input type="submit">
 </form>
