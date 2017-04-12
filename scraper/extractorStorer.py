@@ -10,41 +10,35 @@ from extractorStorerConfig import *
 from timeit import time
 
 class lyricExtractor(object):
-	def main(self, base_url, index_url, alphabets, base_count = 0, start_time = time.time()):
+	'''
+		main caller
+		args : 
+			base url of the site (obtained from config)
+			index url of the site (obtained from config)
+			alphabets - primary nodes (obtained from config)
+			base_count and start_time are counter and temporary arguments
+		return :
+			details pushed to db
+	'''
+	def main(self, base_url, index_url, alphabets, db = 'cassandra'):
 		for letter in alphabets:
 			leaf1_url = index_url+"/"+letter
-			element_tag_links = getLinks(leaf1_url)
-			max_number_of_pages = self.getPages(element_tag_links)
+			element_tag_links = utilities.getLinks(leaf1_url)
+			max_number_of_pages = self.getPages(element_tag_links) if not element_tag_links == None else 0
 			for pageNumber in range(1,max_number_of_pages+1):
 				page_url_modified = leaf1_url+"/"+letter+str(pageNumber)+".htm"
-				refined_links = self.refineLinks(getLinks(page_url_modified), "/lyrics", "title", False)
+				refined_links = self.refineLinks(utilities.getLinks(page_url_modified), "/lyrics", "title", False)
 				for each_link in refined_links:
 					song_links = list(set(self.getAllSongs(base_url+"/"+each_link, each_link, "title")))
 					for each_song in song_links:
 						song_url = base_url+"/"+each_song
-						(lyrics, song_name) = self.getSongLyrics(song_url)
+						res = self.getSongLyrics(song_url)
+						(lyrics, song_name) = (res if not res == None else ('',''))
 						try:
-							self.pushToCassandraMain(each_link.split('/')[-1], song_name, song_url, lyrics,"primary_db")
-						except DuplicateKeyError as e:
+							self.pushToCassandraMain(each_link.split('/')[-1], song_name, song_url, lyrics,"primary_db") if db == 'cassandra' else self.makeDocumentAndPush(each_link.split('/')[-1], song_name, song_url, lyrics)
+						except Exception as e:
+							print e
 							pass
-
-	def makeDocumentAndPush(self, artist, song_name, lyric_url, lyrics):
-		doc = {
-				'_id' : artist+"_"+song_name,
-				'artist_name': artist,
-				'song' : song_name,
-				'lyrics' : lyrics,
-				'lyric link' :lyric_url
-			}
-		pushToMongo("localhost",27017,"get_cancion_primary_db","lyrics").insert(doc)
-
-	def pushToCassandraMain(self, artist, song_name, lyric_url, lyrics, table_name):
-		query = SimpleStatement("INSERT INTO "+table_name+" (id, artist_name, lyrics, lyrics_link, song_name) values (%s, %s, %s, %s, %s)")
-		try:
-			pushToCassandra('get_cancion').execute(query,(artist+"_"+song_name.replace(' ','_'), artist, lyrics, lyric_url, song_name))
-		except Exception as e:
-			print e
-			pass
 
 	def getSongLyrics(self, song_url):
 		resp = utilities.getHtmlResponse(song_url)
@@ -87,3 +81,22 @@ class lyricExtractor(object):
 		
 	def getAllSongs(self, page_url, baseword_href, baseword_title):
 		return self.refineLinks(utilities.getLinks(page_url), baseword_href, baseword_title, node_branch = True)
+
+	def makeDocumentAndPush(self, artist, song_name, lyric_url, lyrics):
+		doc = {
+				'_id' : artist+"_"+song_name,
+				'artist_name': artist,
+				'song' : song_name.replace(' ','_'),
+				'lyrics' : lyrics,
+				'lyric link' :lyric_url
+				}
+		mongoCliObj.insert(doc)
+		print "Mongo insert done"
+
+	def pushToCassandraMain(self, artist, song_name, lyric_url, lyrics, table_name):
+		query = SimpleStatement("INSERT INTO "+table_name+" (id, artist_name, lyrics, lyrics_link, song_name) values (%s, %s, %s, %s, %s)")
+		try:
+			cassClusObj.execute(query,(artist+"_"+song_name.replace(' ','_'), artist, lyrics, lyric_url, song_name))
+		except Exception as e:
+			print e
+			pass
