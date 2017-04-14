@@ -59,8 +59,7 @@ class lyricExtractor(object):
 				except KeyError:
 					out_links.append(link['href'])
 			return out_links
-		else:
-			return out_links
+		return out_links
 
 	def getNoOfPages(self, element_tag_links, baseword_title):
 		out_links = []
@@ -91,7 +90,6 @@ class lyricExtractor(object):
 				'lyric link' :lyric_url
 				}
 		mongoCliObj.insert(doc)
-		print "Mongo insert done"
 
 	def pushToCassandraMain(self, artist, song_name, lyric_url, lyrics, table_name):
 		query = SimpleStatement("INSERT INTO "+table_name+" (id, artist_name, lyrics, lyrics_link, song_name) values (%s, %s, %s, %s, %s)")

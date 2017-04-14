@@ -18,5 +18,4 @@ def getLinks(url):
 	if resp != None:
 		soup = BeautifulSoup(resp,'html.parser')
 		return soup.find_all(href=True)
-	else:
-		return None
+	return None
