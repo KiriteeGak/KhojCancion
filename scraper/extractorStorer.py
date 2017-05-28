@@ -21,6 +21,8 @@ class lyricExtractor(object):
 			details pushed to db
 	'''
 	def main(self, base_url, index_url, alphabets, db = 'cassandra'):
+		urls = []
+		count = 0
 		for letter in alphabets:
 			leaf1_url = index_url+"/"+letter
 			element_tag_links = utilities.getLinks(leaf1_url)
@@ -32,13 +34,16 @@ class lyricExtractor(object):
 					song_links = list(set(self.getAllSongs(base_url+"/"+each_link, each_link, "title")))
 					for each_song in song_links:
 						song_url = base_url+"/"+each_song
-						res = self.getSongLyrics(song_url)
-						(lyrics, song_name) = (res if not res == None else ('',''))
-						try:
-							self.pushToCassandraMain(each_link.split('/')[-1], song_name, song_url, lyrics,"primary_db") if db == 'cassandra' else self.makeDocumentAndPush(each_link.split('/')[-1], song_name, song_url, lyrics)
-						except Exception as e:
-							print e
-							pass
+						urls.append([each_link.split('/')[-1],song_url]); count += 1
+						print count
+						# res = self.getSongLyrics(song_url)
+						# (lyrics, song_name) = (res if not res == None else ('',''))
+						# try:
+						# 	self.pushToCassandraMain(each_link.split('/')[-1], song_name, song_url, lyrics,"primary_db") if db == 'cassandra' else self.makeDocumentAndPush(each_link.split('/')[-1], song_name, song_url, lyrics)
+						# except Exception as e:
+						# 	print e
+						# 	pass
+		return urls
 
 	def getSongLyrics(self, song_url):
 		resp = utilities.getHtmlResponse(song_url)

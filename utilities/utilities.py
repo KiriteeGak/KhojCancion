@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from bs4 import BeautifulSoup
-import urllib2, time
+import urllib2, time, cPickle
 from nltk.corpus import stopwords
 
 def removeStopwords(text):
@@ -19,3 +19,11 @@ def getLinks(url):
 		soup = BeautifulSoup(resp,'html.parser')
 		return soup.find_all(href=True)
 	return None
+
+def dumpAsPickle(filename, toDump):
+	with open(filename+".pkl", 'wb') as fid:
+		cPickle.dump(toDump, fid, protocol = 2)
+
+def loadFromPickle(filename):
+	with open(filename+".pkl", 'rb') as fid:
+		return cPickle.load(fid)
